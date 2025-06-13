@@ -1,0 +1,910 @@
+{
+  "name": "Risk Management",
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4-turbo",
+          "mode": "list",
+          "cachedResultName": "gpt-4-turbo"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1300,
+        460
+      ],
+      "id": "a4f16805-56f3-4c64-a588-3b2f7b96e8d1",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "KYbTTNp8xeoGLfa5",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.chatInput }}",
+        "contextWindowLength": 100
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        1380,
+        540
+      ],
+      "id": "7561825e-b28e-4086-9d23-007be43feecb",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "tyZFave5CjsKg2zy",
+          "name": "Postgres account - viniciuscdes"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "={{ $json.chatInput }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        1480,
+        280
+      ],
+      "id": "856efd88-d4b5-4935-a229-caf937ce97bc",
+      "name": "AI Agent - Risk Manager",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "sendTo": "carvalhoo1988@gmail.com",
+        "subject": "=Risk_{{$now.format('MM-DD')}}",
+        "message": "={{ $json.data }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2420,
+        280
+      ],
+      "id": "bd305760-d370-40bc-8f96-5e4301328482",
+      "name": "Gmail",
+      "webhookId": "9cbcc393-b930-4f82-9ba5-efefb7424607",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "n78iD2pybPSInwDL",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a38020da-4e8c-4ec5-ac06-f5a9599dba08",
+              "name": "output",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2140,
+        280
+      ],
+      "id": "5d89660c-747d-4d45-9597-3ee818165e73",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8f3efa7d-26c7-4fad-8d3c-190d428f76d7",
+              "name": "chatInput",
+              "value": "Gere um Resumo da quantidade de ações por status. A lista dos tres riscos mais criticos por Probibilidade e Nível de impacto e suas respectivas ações. Voce está recebendo essas informações do banco de dados já filtrado. Gere insight ao final.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1180,
+        280
+      ],
+      "id": "40b33d02-c640-40e3-a4cc-4905ac33a20c",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -220,
+        260
+      ],
+      "id": "32e3a309-5daf-4b99-87b6-69b8be31a812",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "mode": "markdownToHtml",
+        "markdown": "={{ $json.output }}",
+        "options": {
+          "completeHTMLDocument": false,
+          "encodeEmails": false
+        }
+      },
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        2280,
+        280
+      ],
+      "id": "4daebab3-a5ed-49bb-8ace-8a099dc1bad3",
+      "name": "Markdown"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "risks",
+          "mode": "list",
+          "cachedResultName": "risks"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.ID }}",
+            "causa_raiz_risco": "={{ $json['Causa Raiz / Causa Real'] }}",
+            "data_da_identificacao_risco": "={{ $json['Data da Identificação'] }}",
+            "plano_de_resposta_risco": "={{ $json['Plano de Resposta'] }}",
+            "atividade_de_mitigacao_risco": "={{ $json['Atividade de Mitigação'] }}",
+            "impacto_real_risco": "={{ $json['Impacto Real'] }}",
+            "atividade_acao_risco": "={{ $json['Ação Risco'] }}",
+            "nivel_do_impacto_risco": "={{ $json['Nível do Impacto'] }}",
+            "probabilidade_risco": "={{ $json.Probabilidade }}",
+            "responsavel_risco": "={{ $json['Responsável Ação'] }}",
+            "project": "={{ $json.Project }}",
+            "descricao_do_risco": "={{ $json['Descrição do Risco'] }}",
+            "impacto_probabilidade": "={{ $json['Impacto/Probalidade'] }}",
+            "status_risco": "={{ $json['Status Risco'] }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": true,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "project",
+              "displayName": "project",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "descricao_do_risco",
+              "displayName": "descricao_do_risco",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "causa_raiz_risco",
+              "displayName": "causa_raiz_risco",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "data_da_identificacao_risco",
+              "displayName": "data_da_identificacao_risco",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "plano_de_resposta_risco",
+              "displayName": "plano_de_resposta_risco",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "atividade_de_mitigacao_risco",
+              "displayName": "atividade_de_mitigacao_risco",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "impacto_real_risco",
+              "displayName": "impacto_real_risco",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "atividade_acao_risco",
+              "displayName": "atividade_acao_risco",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "nivel_do_impacto_risco",
+              "displayName": "nivel_do_impacto_risco",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "probabilidade_risco",
+              "displayName": "probabilidade_risco",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "responsavel_risco",
+              "displayName": "responsavel_risco",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status_risco",
+              "displayName": "status_risco",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "impacto_probabilidade",
+              "displayName": "impacto_probabilidade",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        680,
+        160
+      ],
+      "id": "58655e31-792e-4604-8a78-fefae02cf2a6",
+      "name": "Insere Riscos",
+      "credentials": {
+        "postgres": {
+          "id": "tyZFave5CjsKg2zy",
+          "name": "Postgres account - viniciuscdes"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "actions",
+          "mode": "list",
+          "cachedResultName": "actions"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "risco_id": "={{ $json['Risco ID'] }}",
+            "descricao_acao": "={{ $json['Descrição Ação'] }}",
+            "responsavel_acao": "={{ $json['Responsávele Ação'] }}",
+            "data_prevista_conclusao_acao": "={{ $json['Data Conclusão'] }}",
+            "status_acao": "={{ $json['Status da Ação'] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "risco_id",
+              "displayName": "risco_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "descricao_acao",
+              "displayName": "descricao_acao",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "responsavel_acao",
+              "displayName": "responsavel_acao",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "data_prevista_conclusao_acao",
+              "displayName": "data_prevista_conclusao_acao",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status_acao",
+              "displayName": "status_acao",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        680,
+        380
+      ],
+      "id": "f4816c09-fcc8-4bdd-8264-32fee22a045f",
+      "name": "Insere Ações",
+      "credentials": {
+        "postgres": {
+          "id": "tyZFave5CjsKg2zy",
+          "name": "Postgres account - viniciuscdes"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1lle3QnF08Y6ESE-dfFxXLTGt35IeiYVg4amunDIbVNw",
+          "mode": "list",
+          "cachedResultName": "RiskManagement-AI",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lle3QnF08Y6ESE-dfFxXLTGt35IeiYVg4amunDIbVNw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2010157335,
+          "mode": "list",
+          "cachedResultName": "Actions",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lle3QnF08Y6ESE-dfFxXLTGt35IeiYVg4amunDIbVNw/edit#gid=2010157335"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        420,
+        380
+      ],
+      "id": "1ea727bd-758f-427e-80a9-158d4dc643e6",
+      "name": "Lê planilha ações",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ptbG1CLCrwwfG6KC",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1lle3QnF08Y6ESE-dfFxXLTGt35IeiYVg4amunDIbVNw",
+          "mode": "list",
+          "cachedResultName": "RiskManagement-AI",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lle3QnF08Y6ESE-dfFxXLTGt35IeiYVg4amunDIbVNw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Risks",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lle3QnF08Y6ESE-dfFxXLTGt35IeiYVg4amunDIbVNw/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        420,
+        160
+      ],
+      "id": "9c751e58-3529-4d85-b885-268dafe0d516",
+      "name": "Lê Planilha Riscos",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ptbG1CLCrwwfG6KC",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "deleteTable",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "actions",
+          "mode": "list",
+          "cachedResultName": "actions"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        80,
+        260
+      ],
+      "id": "d1424966-d597-4083-9d66-710e8485b4de",
+      "name": "deleta riscos",
+      "credentials": {
+        "postgres": {
+          "id": "tyZFave5CjsKg2zy",
+          "name": "Postgres account - viniciuscdes"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "deleteTable",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "risks",
+          "mode": "list",
+          "cachedResultName": "risks"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        240,
+        260
+      ],
+      "id": "c7d59859-7222-4bda-a57c-96367f695653",
+      "name": "deleta acoes",
+      "credentials": {
+        "postgres": {
+          "id": "tyZFave5CjsKg2zy",
+          "name": "Postgres account - viniciuscdes"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Atualiza banco de dados com os dados de riscos e ações\n",
+        "height": 680,
+        "width": 1060
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        20,
+        80
+      ],
+      "typeVersion": 1,
+      "id": "c84160c5-af95-4392-8294-4e8fc76cc89c",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        880,
+        280
+      ],
+      "id": "29bb44fe-7d38-448d-970a-602b276f45f7",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "\nSELECT json_agg(row_to_json(r)) AS resultado\nFROM (\n  SELECT\n    id AS \"id\",\n    project AS \"project\",\n    descricao_do_risco AS \"descricaoDoRisco\",\n    causa_raiz_risco AS \"causaRaizRisco\",\n    data_da_identificacao_risco AS \"dataDaIdentificacao\",\n    plano_de_resposta_risco AS \"planoDeResposta\",\n    atividade_de_mitigacao_risco AS \"atividadeDeMitigacao\",\n    impacto_real_risco AS \"impactoReal\",\n    atividade_acao_risco AS \"atividadeAcao\",\n    nivel_do_impacto_risco AS \"nivelDoImpacto\",\n    probabilidade_risco AS \"probabilidade\",\n    responsavel_risco AS \"responsavel\",\n    status_risco AS \"status\",\n    impacto_probabilidade AS \"impactoProbabilidade\",\n    (\n      SELECT json_agg(row_to_json(a))\n      FROM (\n        SELECT \n          ac.descricao_acao AS \"descricaoAcao\",\n          ac.responsavel_acao AS \"responsavelAcao\",\n          ac.data_prevista_conclusao_acao AS \"dataPrevistaConclusao\",\n          ac.status_acao AS \"statusAcao\"\n        FROM actions ac\n        WHERE ac.risco_id = ri.id\n      ) a\n    ) AS \"acoes\"\n  FROM risks ri\n  WHERE ri.id IN (\n    SELECT id\n    FROM risks\n    ORDER BY impacto_probabilidade DESC\n    LIMIT 3\n  )\n) r;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        1520,
+        600
+      ],
+      "id": "d5c3db84-e47e-4783-a139-a4e577667849",
+      "name": "select risks",
+      "credentials": {
+        "postgres": {
+          "id": "tyZFave5CjsKg2zy",
+          "name": "Postgres account - viniciuscdes"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "\nSELECT json_agg(row_to_json(ta)) AS totalizador_acoes\nfrom (\nselect count(*), status_acao\n  from actions\ngroup by status_acao\n) ta",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        1680,
+        600
+      ],
+      "id": "41ec06e0-a903-4dbb-ae09-af86f248add8",
+      "name": "totalizador_acoes",
+      "credentials": {
+        "postgres": {
+          "id": "tyZFave5CjsKg2zy",
+          "name": "Postgres account - viniciuscdes"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Busca os riscos, as ações e gera os insights. \n",
+        "height": 680,
+        "width": 800,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1120,
+        80
+      ],
+      "typeVersion": 1,
+      "id": "62cb1e10-16e2-4229-a4d7-2d20d9266f16",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Formata os dados e envia por e-mail.\n",
+        "height": 680,
+        "width": 800,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1940,
+        80
+      ],
+      "typeVersion": 1,
+      "id": "3a679cbb-c346-452c-983f-d61ede2e4931",
+      "name": "Sticky Note2"
+    }
+  ],
+  "pinData": {
+    "Schedule Trigger": [
+      {
+        "json": {
+          "timestamp": "2025-06-11T13:53:06.596-04:00",
+          "Readable date": "June 11th 2025, 1:53:06 pm",
+          "Readable time": "1:53:06 pm",
+          "Day of week": "Wednesday",
+          "Year": "2025",
+          "Month": "June",
+          "Day of month": "11",
+          "Hour": "13",
+          "Minute": "53",
+          "Second": "06",
+          "Timezone": "America/New_York (UTC-04:00)"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent - Risk Manager",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent - Risk Manager",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent - Risk Manager": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent - Risk Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "deleta riscos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail": {
+      "main": [
+        []
+      ]
+    },
+    "Markdown": {
+      "main": [
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insere Riscos": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insere Ações": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Lê planilha ações": {
+      "main": [
+        [
+          {
+            "node": "Insere Ações",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lê Planilha Riscos": {
+      "main": [
+        [
+          {
+            "node": "Insere Riscos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "deleta riscos": {
+      "main": [
+        [
+          {
+            "node": "deleta acoes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "deleta acoes": {
+      "main": [
+        [
+          {
+            "node": "Lê Planilha Riscos",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Lê planilha ações",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "select risks": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent - Risk Manager",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "totalizador_acoes": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent - Risk Manager",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "957a42aa-dce7-44f3-a2c2-d4c7ff73f1c9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "be19abfa160a42f1dda815189214a7c422c4681eb463a8fc260a577f8df717a6"
+  },
+  "id": "YHTvg2OEocUKdhYC",
+  "tags": []
+}
